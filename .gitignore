@@ -51,7 +51,7 @@ Thumbs.db
 *.jpeg
 *.png
 *.webp
-!public/faces/**
+!public/**
 
 # API keys and secrets
 .env.local
