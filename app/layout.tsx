@@ -1,22 +1,26 @@
-import type { Metadata } from 'next'
-import { Gochi_Hand } from 'next/font/google'
-import './globals.css'
+import type { Metadata } from "next";
+import { Gochi_Hand } from "next/font/google";
+import "./globals.css";
 
 const gochiHand = Gochi_Hand({
-  weight: '400',
-  subsets: ['latin'],
-  variable: '--font-gochi-hand',
-})
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-gochi-hand",
+});
 
 export const metadata: Metadata = {
-  title: 'Face Looker',
-  description: 'An interactive face that follows your cursor',
-}
+  title: "sharekhair",
+  description: "sharekhair",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" className={gochiHand.variable}>
@@ -31,5 +35,5 @@ export default function RootLayout({
       </head>
       <body>{children}</body>
     </html>
-  )
+  );
 }
