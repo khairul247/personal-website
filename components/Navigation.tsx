@@ -28,7 +28,7 @@ export default function Navigation({ items }: NavigationProps) {
         >
           <RoughCircle
             show={hoveredIndex === index}
-            color="black"
+            color="red"
             strokeWidth={5}
             padding={25}
             animationDuration={450}
