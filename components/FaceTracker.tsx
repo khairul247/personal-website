@@ -1,0 +1,122 @@
+'use client'
+
+import { useEffect, useRef, useState, useCallback } from 'react'
+
+// Grid configuration (must match your generated images)
+const P_MIN = -15
+const P_MAX = 15
+const STEP = 3
+const SIZE = 256
+
+interface FaceTrackerProps {
+  basePath?: string
+  debug?: boolean
+  className?: string
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+function quantizeToGrid(val: number): number {
+  const raw = P_MIN + (val + 1) * (P_MAX - P_MIN) / 2
+  const snapped = Math.round(raw / STEP) * STEP
+  return clamp(snapped, P_MIN, P_MAX)
+}
+
+function sanitize(val: number): string {
+  const str = Number(val).toFixed(1)
+  return str.replace('-', 'm').replace('.', 'p')
+}
+
+function gridToFilename(px: number, py: number): string {
+  return `gaze_px${sanitize(px)}_py${sanitize(py)}_${SIZE}.webp`
+}
+
+export default function FaceTracker({
+  basePath = '/faces/',
+  debug = false,
+  className = ''
+}: FaceTrackerProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [imageSrc, setImageSrc] = useState<string>('')
+  const [debugInfo, setDebugInfo] = useState({ x: 0, y: 0, filename: '' })
+
+  const setFromClient = useCallback((clientX: number, clientY: number) => {
+    if (!containerRef.current) return
+
+    const rect = containerRef.current.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+
+    const nx = (clientX - centerX) / (rect.width / 2)
+    const ny = (centerY - clientY) / (rect.height / 2)
+
+    const clampedX = clamp(nx, -1, 1)
+    const clampedY = clamp(ny, -1, 1)
+
+    const px = quantizeToGrid(clampedX)
+    const py = quantizeToGrid(clampedY)
+
+    const filename = gridToFilename(px, py)
+    const imagePath = `${basePath}${filename}`
+
+    setImageSrc(imagePath)
+
+    if (debug) {
+      setDebugInfo({
+        x: Math.round(clientX - rect.left),
+        y: Math.round(clientY - rect.top),
+        filename
+      })
+    }
+  }, [basePath, debug])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setFromClient(e.clientX, e.clientY)
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches && e.touches.length > 0) {
+        const t = e.touches[0]
+        setFromClient(t.clientX, t.clientY)
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('touchmove', handleTouchMove, { passive: true })
+
+    // Initialize at center
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect()
+      setFromClient(rect.left + rect.width / 2, rect.top + rect.height / 2)
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('touchmove', handleTouchMove)
+    }
+  }, [setFromClient])
+
+  return (
+    <div
+      ref={containerRef}
+      className={`relative w-full h-full bg-transparent rounded-lg ${className}`}
+    >
+      {imageSrc && (
+        <img
+          src={imageSrc}
+          alt="Face following gaze"
+          className="relative w-full h-full object-contain transition-opacity duration-100 ease-out rounded-full"
+        />
+      )}
+      {debug && (
+        <div className="absolute top-2.5 left-2.5 bg-transparent text-white py-2 px-3 rounded font-mono text-xs leading-relaxed">
+          Mouse: ({debugInfo.x}, {debugInfo.y})<br />
+          Image: {debugInfo.filename}
+        </div>
+      )}
+    </div>
+  )
+}
