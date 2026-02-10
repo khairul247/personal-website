@@ -4,6 +4,7 @@ export interface PortfolioItem {
   src?: string;
   alt: string;
   caption: string;
+  link?: string;
 }
 
 export interface ContactLink {
@@ -49,7 +50,7 @@ const content: SiteContent = {
   portfolio: {
     title: "Portfolio",
     items: [
-      { src: "/portfolio1.webp", alt: "Rembayung", caption: "rembayung, web design, 29.01.2026" },
+      { src: "/portfolio1.webp", alt: "Rembayung", caption: "rembayung, web design, 29.01.2026", link: "https://khairulaming-restaurant.vercel.app/" },
       { alt: "New project", caption: "secret project, coming soon" },
       { alt: "New project", caption: "secret project, coming soon" },
       { alt: "New project", caption: "secret project, coming soon" },

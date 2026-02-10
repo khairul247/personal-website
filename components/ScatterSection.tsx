@@ -38,6 +38,34 @@ function PortfolioCard({
   isHovered: boolean;
   onHover: (i: number | null) => void;
 }) {
+  const card = (
+    <div
+      className={`relative bg-white [box-shadow:#00000033_0px_12px_13px] p-4 cursor-pointer ${isHovered ? "giggle" : ""}`}
+    >
+      <Tape />
+      <div className="relative h-75 w-126 overflow-hidden">
+        {item.src ? (
+          <Image
+            src={item.src}
+            alt={item.alt}
+            fill
+            className="object-cover object-center"
+            priority={index < 2}
+          />
+        ) : (
+          <div className="h-full w-full bg-gray-100 flex items-center justify-center">
+            <span className="font-(family-name:--font-gochi-hand) text-2xl text-gray-400">
+              Ongoing
+            </span>
+          </div>
+        )}
+      </div>
+      <p className="mt-3 text-sm text-black font-(family-name:--font-gochi-hand)">
+        {item.caption}
+      </p>
+    </div>
+  );
+
   return (
     <div
       className="flex justify-center relative"
@@ -45,31 +73,13 @@ function PortfolioCard({
       onMouseEnter={() => onHover(index)}
       onMouseLeave={() => onHover(null)}
     >
-      <div
-        className={`relative bg-white [box-shadow:#00000033_0px_12px_13px] p-4 cursor-pointer ${isHovered ? "giggle" : ""}`}
-      >
-        <Tape />
-        <div className="relative h-75 w-126 overflow-hidden">
-          {item.src ? (
-            <Image
-              src={item.src}
-              alt={item.alt}
-              fill
-              className="object-cover object-center"
-              priority={index < 2}
-            />
-          ) : (
-            <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-              <span className="font-(family-name:--font-gochi-hand) text-2xl text-gray-400">
-                Ongoing
-              </span>
-            </div>
-          )}
-        </div>
-        <p className="mt-3 text-sm text-black font-(family-name:--font-gochi-hand)">
-          {item.caption}
-        </p>
-      </div>
+      {item.link ? (
+        <a href={item.link} target="_blank" rel="noopener noreferrer">
+          {card}
+        </a>
+      ) : (
+        card
+      )}
     </div>
   );
 }
