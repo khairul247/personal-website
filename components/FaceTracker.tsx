@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 
-// Grid configuration (must match your generated images)
 const P_MIN = -15
 const P_MAX = 15
 const STEP = 3
@@ -33,17 +32,37 @@ function gridToFilename(px: number, py: number): string {
   return `gaze_px${sanitize(px)}_py${sanitize(py)}_${SIZE}.webp`
 }
 
+// Generate all possible filenames for preloading
+function getAllFilenames(basePath: string): string[] {
+  const paths: string[] = []
+  for (let px = P_MIN; px <= P_MAX; px += STEP) {
+    for (let py = P_MIN; py <= P_MAX; py += STEP) {
+      paths.push(`${basePath}${gridToFilename(px, py)}`)
+    }
+  }
+  return paths
+}
+
 export default function FaceTracker({
   basePath = '/faces/',
   debug = false,
   className = ''
 }: FaceTrackerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [imageSrc, setImageSrc] = useState<string>('')
-  const [debugInfo, setDebugInfo] = useState({ x: 0, y: 0, filename: '' })
+  const imgRef = useRef<HTMLImageElement>(null)
+  const lastPathRef = useRef<string>('')
+
+  // Preload all face images on mount
+  useEffect(() => {
+    const paths = getAllFilenames(basePath)
+    paths.forEach((src) => {
+      const img = new Image()
+      img.src = src
+    })
+  }, [basePath])
 
   const setFromClient = useCallback((clientX: number, clientY: number) => {
-    if (!containerRef.current) return
+    if (!containerRef.current || !imgRef.current) return
 
     const rect = containerRef.current.getBoundingClientRect()
     const centerX = rect.left + rect.width / 2
@@ -58,19 +77,15 @@ export default function FaceTracker({
     const px = quantizeToGrid(clampedX)
     const py = quantizeToGrid(clampedY)
 
-    const filename = gridToFilename(px, py)
-    const imagePath = `${basePath}${filename}`
+    const imagePath = `${basePath}${gridToFilename(px, py)}`
 
-    setImageSrc(imagePath)
+    // Skip if same image — no DOM update needed
+    if (imagePath === lastPathRef.current) return
+    lastPathRef.current = imagePath
 
-    if (debug) {
-      setDebugInfo({
-        x: Math.round(clientX - rect.left),
-        y: Math.round(clientY - rect.top),
-        filename
-      })
-    }
-  }, [basePath, debug])
+    // Direct DOM update — bypasses React re-render
+    imgRef.current.src = imagePath
+  }, [basePath])
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -104,17 +119,14 @@ export default function FaceTracker({
       ref={containerRef}
       className={`relative w-full h-full bg-transparent rounded-lg ${className}`}
     >
-      {imageSrc && (
-        <img
-          src={imageSrc}
-          alt="Face following gaze"
-          className="relative w-full h-full object-contain transition-opacity duration-100 ease-out rounded-full"
-        />
-      )}
+      <img
+        ref={imgRef}
+        alt="Face following gaze"
+        className="relative w-full h-full object-contain rounded-full"
+      />
       {debug && (
         <div className="absolute top-2.5 left-2.5 bg-transparent text-white py-2 px-3 rounded font-mono text-xs leading-relaxed">
-          Mouse: ({debugInfo.x}, {debugInfo.y})<br />
-          Image: {debugInfo.filename}
+          Path: {lastPathRef.current}
         </div>
       )}
     </div>
